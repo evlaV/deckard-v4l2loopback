@@ -37,7 +37,7 @@
 #define kstrtoul strict_strtoul
 #endif
 
-#if defined(timer_setup) && defined(from_timer)
+#if defined(timer_setup)
 #define HAVE_TIMER_SETUP
 #endif
 
@@ -48,6 +48,10 @@
 #define V4L2LOOPBACK_VERSION_CODE                                              \
 	KERNEL_VERSION(V4L2LOOPBACK_VERSION_MAJOR, V4L2LOOPBACK_VERSION_MINOR, \
 		       V4L2LOOPBACK_VERSION_BUGFIX)
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(6, 14, 0)
+#define del_timer_sync timer_delete_sync
+#endif
 
 MODULE_DESCRIPTION("V4L2 loopback video device");
 MODULE_AUTHOR("Vasily Levin, "
@@ -700,7 +704,8 @@ static int vidioc_querycap(struct file *file, void *priv,
 			->device_nr;
 	__u32 capabilities = V4L2_CAP_STREAMING | V4L2_CAP_READWRITE;
 
-	strlcpy(cap->driver, "v4l2 loopback", sizeof(cap->driver));
+	//strlcpy(cap->driver, "v4l2 loopback", sizeof(cap->driver));
+	strscpy(cap->driver, "v4l2 loopback", sizeof(cap->driver));
 	snprintf(cap->card, sizeof(cap->card), "%s", dev->card_label);
 	snprintf(cap->bus_info, sizeof(cap->bus_info),
 		 "platform:v4l2loopback-%03d", device_nr);
@@ -1251,7 +1256,8 @@ static int vidioc_enum_output(struct file *file, void *fh,
 	memset(outp, 0, sizeof(*outp));
 
 	outp->index = index;
-	strlcpy(outp->name, "loopback in", sizeof(outp->name));
+	//strlcpy(outp->name, "loopback in", sizeof(outp->name));
+	strscpy(outp->name, "loopback in", sizeof(outp->name));
 	outp->type = V4L2_OUTPUT_TYPE_ANALOG;
 	outp->audioset = 0;
 	outp->modulator = 0;
@@ -1311,7 +1317,8 @@ static int vidioc_enum_input(struct file *file, void *fh,
 	memset(inp, 0, sizeof(*inp));
 
 	inp->index = index;
-	strlcpy(inp->name, "loopback", sizeof(inp->name));
+	//strlcpy(inp->name, "loopback", sizeof(inp->name));
+	strscpy(inp->name, "loopback", sizeof(inp->name));
 	inp->type = V4L2_INPUT_TYPE_CAMERA;
 	inp->audioset = 0;
 	inp->tuner = 0;
@@ -2312,7 +2319,8 @@ static void check_timers(struct v4l2_loopback_device *dev)
 #ifdef HAVE_TIMER_SETUP
 static void sustain_timer_clb(struct timer_list *t)
 {
-	struct v4l2_loopback_device *dev = from_timer(dev, t, sustain_timer);
+	struct v4l2_loopback_device *dev =
+		container_of(t, struct v4l2_loopback_device, sustain_timer);
 #else
 static void sustain_timer_clb(unsigned long nr)
 {
@@ -2337,7 +2345,8 @@ static void sustain_timer_clb(unsigned long nr)
 #ifdef HAVE_TIMER_SETUP
 static void timeout_timer_clb(struct timer_list *t)
 {
-	struct v4l2_loopback_device *dev = from_timer(dev, t, timeout_timer);
+	struct v4l2_loopback_device *dev =
+		container_of(t, struct v4l2_loopback_device, timeout_timer);
 #else
 static void timeout_timer_clb(unsigned long nr)
 {
