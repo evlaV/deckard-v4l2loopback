@@ -53,6 +53,11 @@
 #define del_timer_sync timer_delete_sync
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 18, 0)
+#define v4l2_fh_add(fh, filp) v4l2_fh_add(fh)
+#define v4l2_fh_del(fh, filp) v4l2_fh_del(fh)
+#endif
+
 MODULE_DESCRIPTION("V4L2 loopback video device");
 MODULE_AUTHOR("Vasily Levin, "
 	      "IOhannes m zmoelnig <zmoelnig@iem.at>,"
@@ -1991,7 +1996,7 @@ static int v4l2_loopback_open(struct file *file)
 	v4l2_fh_init(&opener->fh, video_devdata(file));
 	file->private_data = &opener->fh;
 
-	v4l2_fh_add(&opener->fh);
+	v4l2_fh_add(&opener->fh, file);
 	dprintk("opened dev:%p with image:%p\n", dev, dev ? dev->image : NULL);
 	MARK();
 	return 0;
@@ -2019,7 +2024,7 @@ static int v4l2_loopback_close(struct file *file)
 	}
 	try_free_buffers(dev);
 
-	v4l2_fh_del(&opener->fh);
+	v4l2_fh_del(&opener->fh, file);
 	v4l2_fh_exit(&opener->fh);
 
 	kfree(opener);
