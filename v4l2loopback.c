@@ -397,7 +397,7 @@ static inline struct v4l2_loopback_opener *fh_to_dec_ctx(struct v4l2_fh *fh)
 static inline struct v4l2_loopback_opener *file_to_dec_ctx(struct file *filp)
 {
 #ifdef USE_FH_PRIVATE_DATA
-	return fh_to_opener(file->private_data);
+	return fh_to_opener(filp->private_data);
 #else	
 	return fh_to_dec_ctx(file_to_v4l2_fh(filp));
 #endif	
